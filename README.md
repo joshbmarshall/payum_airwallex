@@ -25,9 +25,8 @@ $payum = (new PayumBuilder)
 
     ->addGateway('airwallex', [
         'factory' => 'sairwallex',
-        'access_token' => 'Your-access-token',
-        'app_id' => 'Your-app-id',
-        'location_id' => 'Your-location-id',
+        'client_id' => 'Your-api-client-id',
+        'api_key' => 'Your-api-key',
         'sandbox' => false,
         'img_url' => 'https://path/to/logo/image.jpg',
     ])
@@ -53,50 +52,6 @@ $payment->setNumber(uniqid());
 $payment->setCurrencyCode($currency);
 $payment->setTotalAmount(100); // Total cents
 $payment->setDescription(substr($description, 0, 45));
-$storage->setInternalDetails($payment, $request);
-
-$captureToken = $payum->getTokenFactory()->createCaptureToken('airwallex', $payment, 'done.php');
-$url = $captureToken->getTargetUrl();
-header("Location: " . $url);
-die();
-```
-
-### Request Afterpay payment
-
-Afterpay requires more information about the customer to process the payment
-
-```php
-<?php
-
-use Payum\Core\Request\Capture;
-
-$storage = $payum->getStorage(\Payum\Core\Model\Payment::class);
-$request = [
-    'invoice_id' => 100,
-];
-
-$payment = $storage->create();
-$payment->setNumber(uniqid());
-$payment->setCurrencyCode($currency);
-$payment->setTotalAmount(100); // Total cents
-$payment->setDescription(substr($description, 0, 45));
-$payment->setDetails([
-    'ship_item' => false,
-    'pickup_contact' => [ // Optional if shipping the item
-        'addressLines' => [
-            'Address Line 1',
-            'Address Line 2', // Optional
-        ],
-        'city' => 'Address City',
-        'state' => 'Address State',
-        'postalCode' => 'Address Postal Code',
-        'countryCode' => 'AU',
-        'givenName' => 'Business Name or contact person',
-        'familyName' => '',
-        'email' => 'pickup@email.address', // Optional
-        'phone' => 'Pickup Phone', // Optional
-    ],
-]);
 $storage->setInternalDetails($payment, $request);
 
 $captureToken = $payum->getTokenFactory()->createCaptureToken('airwallex', $payment, 'done.php');
