@@ -21,15 +21,13 @@ class ObtainNonceAction implements ActionInterface, GatewayAwareInterface {
      * @var string
      */
     protected $templateName;
-    protected $use_afterpay;
     protected $use_sandbox;
 
     /**
      * @param string $templateName
      */
-    public function __construct(string $templateName, bool $use_sandbox, bool $use_afterpay) {
+    public function __construct(string $templateName, bool $use_sandbox) {
         $this->templateName = $templateName;
-        $this->use_afterpay = $use_afterpay;
         $this->use_sandbox = $use_sandbox;
     }
 
@@ -37,7 +35,8 @@ class ObtainNonceAction implements ActionInterface, GatewayAwareInterface {
      * {@inheritDoc}
      */
     public function execute($request) {
-        /** @var $request ObtainNonce */
+        /** @var ObtainNonce $request */
+
         RequestNotSupportedException::assertSupports($this, $request);
 
         $model = ArrayObject::ensureArrayObject($request->getModel());
@@ -56,6 +55,8 @@ class ObtainNonceAction implements ActionInterface, GatewayAwareInterface {
             return;
         }
 
+        // Create Payment Intent
+
         $billingContact = [
             'email' => $model['email'] ?? '',
         ];
@@ -70,20 +71,12 @@ class ObtainNonceAction implements ActionInterface, GatewayAwareInterface {
             ]),
             'numeric_amount' => $model['amount'],
             'currencyCode' => $model['currency'],
-            'appId' => $model['app_id'],
-            'locationId' => $model['location_id'],
+            'countryCode' => $model['countryCode'] ?? 'AU',
+            'intentId' => $model['intentId'],
+            'clientSecret' => $model['clientSecret'],
             'actionUrl' => $getHttpRequest->uri,
             'imgUrl' => $model['img_url'],
-            'use_afterpay' => $this->use_afterpay ? 1 : 0,
-            'billing' => $model['billing'] ?? [],
-            'shipping' => $model['shipping'] ?? [],
-            'country' => $model['country'] ?? 'AU',
             'use_sandbox' => $this->use_sandbox ? 1 : 0,
-            'ship_item' => $model['ship_item'] ?? false,
-            'pickupContact' => json_encode($model['pickup_contact'] ?? null),
-            'afterpay_addresschange_url' => $model['afterpay_addresschange_url'] ?? false,
-            'afterpay_shippingchange_url' => $model['afterpay_shippingchange_url'] ?? false,
-            'afterpay_shipping_options' => json_encode($model['afterpay_shipping_options'] ?? []),
         )));
 
         throw new HttpResponse($renderTemplate->getResult());

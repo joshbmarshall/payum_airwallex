@@ -1,6 +1,6 @@
 <?php
 
-namespace Cognito\PayumSquare\Request\Api;
+namespace Cognito\PayumAirwallex\Request\Api;
 
 use Payum\Core\Request\Generic;
 

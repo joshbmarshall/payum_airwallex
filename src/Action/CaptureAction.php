@@ -35,12 +35,24 @@ class CaptureAction implements ActionInterface, GatewayAwareInterface {
             return;
         }
 
-        $model['app_id'] = $this->config['app_id'];
-        $model['location_id'] = $this->config['location_id'];
+        $model['client_id'] = $this->config['client_id'];
+        $model['api_key'] = $this->config['api_key'];
         $model['img_url'] = $this->config['img_url'] ?? '';
 
         $obtainNonce = new ObtainNonce($request->getModel());
         $obtainNonce->setModel($model);
+
+        // Create Intent
+        $intent = $this->doPostRequest('/api/v1/pa/payment_intents/create', [
+            'request_id' => uniqid(),
+            'amount' => $model['amount'],
+            'currency' => $model['currency'],
+            'merchant_order_id' => $model['merchant_order_id'],
+            'return_url' => $request->getToken()->getTargetUrl(),
+        ]);
+
+        $model['intentId'] = $intent['id'];
+        $model['clientSecret'] = $intent['client_secret'];
 
         $this->gateway->execute($obtainNonce);
         if (!$model->offsetExists('status')) {
@@ -128,5 +140,88 @@ class CaptureAction implements ActionInterface, GatewayAwareInterface {
         return
             $request instanceof Capture &&
             $request->getModel() instanceof \ArrayAccess;
+    }
+
+    /**
+     * Get the site to use
+     * @return string
+     */
+    public function baseurl() {
+        if ($this->config['sandbox']) {
+            return 'https://pci-api.airwallex.com'; // TODO remove
+            return 'https://pci-api-demo.airwallex.com';
+        } else {
+            return 'https://pci-api.airwallex.com';
+        }
+    }
+
+    /**
+     * Get authentication token for bearer string
+     * @return string
+     */
+    public function getAuthToken() {
+        static $token = '';
+
+        if (!$token) {
+            $curl = curl_init();
+            curl_setopt_array($curl, [
+                CURLOPT_URL => $this->baseurl() . '/api/v1/authentication/login',
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_ENCODING => "",
+                CURLOPT_CUSTOMREQUEST => "POST",
+                CURLOPT_HTTPHEADER => [
+                    "Accept: application/json",
+                    'x-client-id: ' . $this->config['client_id'],
+                    'x-api-key: ' . $this->config['api_key'],
+                    "Content-Type: application/json"
+                ],
+            ]);
+            $response = curl_exec($curl);
+            $err = curl_error($curl);
+
+            curl_close($curl);
+
+            if ($err) {
+                throw new \Exception($err);
+            }
+            $responseData = json_decode($response, true);
+            $token = $responseData['token'];
+        }
+        return $token;
+    }
+
+    /**
+     * Perform POST request to Airwallex servers
+     * @param string $url relative path
+     * @param string $data json encoded data
+     * @return array
+     */
+    public function doPostRequest($url, $data) {
+        $curl = curl_init();
+
+        curl_setopt_array($curl, [
+            CURLOPT_URL => $this->baseurl() . $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => "",
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => "POST",
+            CURLOPT_HTTPHEADER => [
+                "Accept: application/json",
+                'Authorization: Bearer ' . $this->getAuthToken(),
+                "Content-Type: application/json"
+            ],
+            CURLOPT_POSTFIELDS => json_encode($data),
+        ]);
+        $response = curl_exec($curl);
+        $err = curl_error($curl);
+
+        curl_close($curl);
+
+        if ($err) {
+            throw new \Exception($err);
+        }
+        return json_decode($response, true);
     }
 }
