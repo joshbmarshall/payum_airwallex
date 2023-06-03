@@ -51,7 +51,7 @@ class ObtainNonceAction implements ActionInterface, GatewayAwareInterface {
         // Received payment information from Airwallex
         if (isset($getHttpRequest->request['payment_intent'])) {
             $model['nonce'] = $getHttpRequest->request['payment_intent'];
-            $model['verificationToken'] = $getHttpRequest->request['verification_token'];
+            $model['details'] = $getHttpRequest->request['detail'];
             return;
         }
 
