@@ -62,7 +62,7 @@ class CaptureAction implements ActionInterface, GatewayAwareInterface {
                 $model['status'] = 'failed';
                 $model['error'] = 'Expected REQUIRES_CAPTURE got ' . $checkedIntent['status'];
             } else {
-                $checkedIntent = $this->confirmPaymentIntent($model['intentId'], $request->getToken()->getHash());
+                $checkedIntent = $this->capturePaymentIntent($model['intentId'], $request->getToken()->getHash());
 
                 if (array_key_exists('status', $checkedIntent) && $checkedIntent['status'] == 'SUCCEEDED') {
                     $model['status'] = 'success';
@@ -91,7 +91,6 @@ class CaptureAction implements ActionInterface, GatewayAwareInterface {
      */
     public function baseurl() {
         if ($this->config['sandbox']) {
-            return 'https://pci-api.airwallex.com'; // TODO remove
             return 'https://pci-api-demo.airwallex.com';
         } else {
             return 'https://pci-api.airwallex.com';
@@ -102,10 +101,9 @@ class CaptureAction implements ActionInterface, GatewayAwareInterface {
         return $this->doGetRequest('/api/v1/pa/payment_intents/' . $intentId);
     }
 
-    public function confirmPaymentIntent($intentId, $request_id) {
-        return $this->doPostRequest('/api/v1/pa/payment_intents/' . $intentId . '/confirm', [
-            'id' => $intentId,
-            'request_id' => $request_id,
+    public function capturePaymentIntent($intentId, $request_id) {
+        return $this->doPostRequest('/api/v1/pa/payment_intents/' . $intentId . '/capture', [
+            'request_id' => $request_id . 'Capture',
         ]);
     }
 

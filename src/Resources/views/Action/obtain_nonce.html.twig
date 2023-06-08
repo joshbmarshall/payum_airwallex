@@ -21,7 +21,7 @@
         </svg>
       </div>
       <div id="dropIn"></div>
-      <div id="error" style="margin: 10px 0; color: #ff3333; font-weight: bold"></div>
+      <div id="error" style="margin: 10px 0; color: #ff3333; font-weight: bold; visibility: hidden;"></div>
       <div id="success" style="margin: 5px 0; border-radius: 5px; text-align: center; background-color: #1b841d; color: #ffffff; padding: 5px;">Payment Successful!</div>
       <div style="margin-top: 10px; text-align: center;">
         <small>
@@ -42,8 +42,7 @@
       try {
       Airwallex.init({
       {% if use_sandbox %}
-        env: 'prod',
-        envTODO: 'staging',
+        env: 'demo',
       {% else %}
         env: 'prod',
       {% endif %}
@@ -82,7 +81,6 @@
         document.getElementById('success').style.display = 'block'; // show success block
         document.getElementById('payment_detail').value = JSON.stringify(event.detail);
 
-        window.alert(JSON.stringify(event.detail));
         document.getElementById('airwallex-payment-form').submit();
       });
 
