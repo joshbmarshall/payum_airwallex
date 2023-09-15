@@ -137,6 +137,9 @@ class CaptureAction implements ActionInterface, GatewayAwareInterface {
                 throw new \Exception($err);
             }
             $responseData = json_decode($response, true);
+            if (!array_key_exists('token', $responseData)) {
+                throw new \Exception($responseData['code']);
+            }
             $token = $responseData['token'];
         }
         return $token;
